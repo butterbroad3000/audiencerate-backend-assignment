@@ -29,6 +29,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -131,7 +132,7 @@ class SegmentServiceTest {
         when(dataSourceDao.findExistingIds(any())).thenReturn(Set.of("ds_001"));
         when(dataSource.getConnection()).thenReturn(connection);
         when(segmentDao.nextId()).thenReturn("seg_0100");
-        when(segmentDao.insert(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(segmentDao.insert(any(), any(), any(), any(), any(), anyLong(), any(), any()))
                 .thenReturn(Instancio.of(Segment.class).set(Select.field(Segment::getId), "seg_0100").create());
         when(segmentDao.findById("seg_0100"))
                 .thenReturn(Optional.of(Instancio.of(Segment.class).set(Select.field(Segment::getId), "seg_0100").create()));
@@ -148,25 +149,23 @@ class SegmentServiceTest {
 
     @Test
     void shouldDefaultStatusToDraftWhenNull() throws SQLException {
-        when(dataSourceDao.findExistingIds(any())).thenReturn(Set.of());
         when(dataSource.getConnection()).thenReturn(connection);
         when(segmentDao.nextId()).thenReturn("seg_0100");
-        when(segmentDao.insert(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(segmentDao.insert(any(), any(), any(), any(), any(), anyLong(), any(), any()))
                 .thenReturn(Instancio.create(Segment.class));
         when(segmentDao.findById(any())).thenReturn(Optional.of(Instancio.create(Segment.class)));
 
         var req = new CreateSegmentRequest("Name", null, null, null, null);
         service.create(req, dataSource);
-        verify(segmentDao).insert(any(), any(), any(), any(), eq("draft"), any(), any(), any());
+        verify(segmentDao).insert(any(), any(), any(), any(), eq("draft"), anyLong(), any(), any());
     }
 
     @Test
     void shouldRollbackOnError() throws SQLException {
-        when(dataSourceDao.findExistingIds(any())).thenReturn(Set.of());
         when(dataSource.getConnection()).thenReturn(connection);
         when(segmentDao.nextId()).thenReturn("seg_0100");
         doThrow(new RuntimeException("DB error")).when(segmentDao)
-                .insert(any(), any(), any(), any(), any(), any(), any(), any());
+                .insert(any(), any(), any(), any(), any(), anyLong(), any(), any());
 
         var req = new CreateSegmentRequest("Name", null, null, null, null);
         assertThrows(RuntimeException.class, () -> service.create(req, dataSource));
