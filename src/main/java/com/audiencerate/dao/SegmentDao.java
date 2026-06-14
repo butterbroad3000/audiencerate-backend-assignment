@@ -10,12 +10,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,16 +22,18 @@ import java.util.Set;
 public class SegmentDao {
 
     private static final Logger log = LoggerFactory.getLogger(SegmentDao.class);
-    private final DataSource ds;
-
     private static final Set<String> ALLOWED_SORTS = Set.of(
             "name", "-name",
             "audienceSize", "-audienceSize",
             "updatedAt", "-updatedAt",
             "matchRate", "-matchRate");
 
-    public SegmentDao(DataSource ds) {
+    private final DataSource ds;
+    private final ObjectMapper om;
+
+    public SegmentDao(DataSource ds, ObjectMapper om) {
         this.ds = ds;
+        this.om = om;
     }
 
     // ---------- List with search / filter / sort / pagination ----------
@@ -414,19 +415,17 @@ public class SegmentDao {
         };
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> parseJsonArray(ResultSet rs, String column) throws SQLException {
         String json = rs.getString(column);
         if (json == null || json.equals("[]") || json.equals("null")) {
             return List.of();
         }
-        // json_agg returns a PG JSON string like ["tag1","tag2"]
-        // Strip brackets and parse
-        String inner = json.substring(1, json.length() - 1).trim();
-        if (inner.isEmpty()) return List.of();
-        return Arrays.stream(inner.split(","))
-                .map(s -> s.trim().replaceAll("^\"|\"$", ""))
-                .toList();
+        try {
+            return om.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            log.error("Failed to parse JSON array: {}", json, e);
+            return List.of();
+        }
     }
 
     private Segment mapRow(ResultSet rs) throws SQLException {
