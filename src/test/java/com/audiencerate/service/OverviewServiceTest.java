@@ -1,0 +1,86 @@
+package com.audiencerate.service;
+
+import com.audiencerate.dao.ActivationDao;
+import com.audiencerate.dao.DataSourceDao;
+import com.audiencerate.dao.SegmentDao;
+import com.audiencerate.dao.SegmentDao.StatusCount;
+import com.audiencerate.model.Segment;
+import org.instancio.Instancio;
+import org.instancio.Select;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class OverviewServiceTest {
+
+    @Mock DataSourceDao dataSourceDao;
+    @Mock SegmentDao segmentDao;
+    @Mock ActivationDao activationDao;
+
+    private OverviewService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new OverviewService(dataSourceDao, segmentDao, activationDao);
+    }
+
+    @Test
+    void shouldAggregateAcrossAllDatabases() {
+        when(dataSourceDao.sumProfilesCount()).thenReturn(29_013_000L);
+        when(segmentDao.count()).thenReturn(36);
+        when(segmentDao.countByStatus("active")).thenReturn(14);
+        when(segmentDao.averageMatchRate()).thenReturn(new BigDecimal("0.701"));
+        when(activationDao.count()).thenReturn(19);
+        when(segmentDao.countGroupByStatus()).thenReturn(List.of(
+                new StatusCount("active", 14),
+                new StatusCount("draft", 12),
+                new StatusCount("archived", 10)));
+
+        var topSegments = List.of(
+                Instancio.of(Segment.class)
+                        .set(Select.field(Segment::getId), "seg_0004")
+                        .set(Select.field(Segment::getName), "Auto Intenders")
+                        .set(Select.field(Segment::getAudienceSize), 4_018_500L)
+                        .create());
+        when(segmentDao.findTopByAudienceSize(5)).thenReturn(topSegments);
+
+        var result = service.getOverview();
+
+        assertEquals(29_013_000L, result.kpis().totalProfiles());
+        assertEquals(36, result.kpis().totalSegments());
+        assertEquals(14, result.kpis().activeSegments());
+        assertEquals(new BigDecimal("0.701"), result.kpis().avgMatchRate());
+        assertEquals(19, result.kpis().totalActivations());
+        assertEquals(3, result.segmentsByStatus().size());
+        assertEquals(14, result.segmentsByStatus().get("active"));
+        assertEquals(1, result.topSegments().size());
+        assertEquals("Auto Intenders", result.topSegments().get(0).name());
+    }
+
+    @Test
+    void shouldHandleEmptyData() {
+        when(dataSourceDao.sumProfilesCount()).thenReturn(0L);
+        when(segmentDao.count()).thenReturn(0);
+        when(segmentDao.countByStatus("active")).thenReturn(0);
+        when(segmentDao.averageMatchRate()).thenReturn(BigDecimal.ZERO);
+        when(activationDao.count()).thenReturn(0);
+        when(segmentDao.countGroupByStatus()).thenReturn(List.of());
+        when(segmentDao.findTopByAudienceSize(5)).thenReturn(List.of());
+
+        var result = service.getOverview();
+
+        assertEquals(0L, result.kpis().totalProfiles());
+        assertEquals(0, result.kpis().totalSegments());
+        assertEquals(0L, result.kpis().identitiesResolved());
+        assertTrue(result.topSegments().isEmpty());
+    }
+}

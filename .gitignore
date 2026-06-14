@@ -20,3 +20,6 @@ build/
 # OS / misc
 .DS_Store
 __pycache__/
+.claude/
+out/
+dependency-reduced-pom.xml
