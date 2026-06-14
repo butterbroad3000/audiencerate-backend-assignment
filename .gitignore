@@ -1,0 +1,22 @@
+# Java build output
+target/
+build/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+.gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Env & secrets
+.env
+
+# OS / misc
+.DS_Store
+__pycache__/

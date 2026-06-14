@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: audiencerate-dmp-db
+    environment:
+      POSTGRES_USER: audiencerate
+      POSTGRES_PASSWORD: audiencerate
+      POSTGRES_DB: audiencerate
+    ports:
+      - "5432:5432"
+    volumes:
+      # Scripts in this folder run once, in alphabetical order, on first boot:
+      #   00 creates the 3 databases, 01/02/03 create + seed each one.
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - dmp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audiencerate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  dmp_pgdata:
