@@ -1,5 +1,6 @@
 package com.audiencerate.resource;
 
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;
@@ -33,7 +34,8 @@ public class OpenApiResource {
                     if (cachedSpec == null) {
                         SwaggerConfiguration config = new SwaggerConfiguration()
                                 .resourcePackages(Set.of("com.audiencerate.resource"))
-                                .prettyPrint(true);
+                                .prettyPrint(true)
+                                .readAllResources(false);
 
                         OpenApiContext ctx = new JaxrsOpenApiContextBuilder<>()
                                 .openApiConfiguration(config)
@@ -44,12 +46,16 @@ public class OpenApiResource {
                             cachedSpec.setInfo(new Info()
                                     .title("AudienceRate API")
                                     .version("1.0.0")
-                                    .description("REST API for AudienceRate DMP — audience segments, activations, and data sources."));
+                                    .description("REST API for AudienceRate DMP"));
                         }
+
+                        // Re-parse to resolve $ref issues
+                        cachedSpec = Json.mapper().readValue(
+                                Json.mapper().writeValueAsString(cachedSpec), OpenAPI.class);
                     }
                 }
             }
-            return Response.ok(cachedSpec).build();
+            return Response.ok(Json.pretty(cachedSpec)).build();
         } catch (Exception e) {
             log.error("Failed to generate OpenAPI spec", e);
             return Response.serverError()

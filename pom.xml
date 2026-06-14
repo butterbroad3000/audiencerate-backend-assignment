@@ -89,11 +89,18 @@
             <version>${postgresql.version}</version>
         </dependency>
 
-        <!-- Swagger / OpenAPI -->
+        <!-- Swagger / OpenAPI (Jakarta variant for Jersey 3.x) -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2</artifactId>
+            <artifactId>swagger-jaxrs2-jakarta</artifactId>
             <version>${swagger.version}</version>
+        </dependency>
+
+        <!-- Swagger UI webjar -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
+            <version>5.17.14</version>
         </dependency>
 
         <!-- Jackson (explicit, for ObjectMapper configuration) -->

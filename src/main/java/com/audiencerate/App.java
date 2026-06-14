@@ -16,6 +16,7 @@ import com.audiencerate.resource.HealthResource;
 import com.audiencerate.resource.OpenApiResource;
 import com.audiencerate.resource.OverviewResource;
 import com.audiencerate.resource.SegmentResource;
+import com.audiencerate.resource.SwaggerUiResource;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -52,6 +53,7 @@ public class App {
         rc.register(injector.getInstance(DestinationResource.class));
         rc.register(injector.getInstance(ActivationResource.class));
         rc.register(injector.getInstance(OpenApiResource.class));
+        rc.register(injector.getInstance(SwaggerUiResource.class));
 
         // Providers
         rc.register(JacksonFeature.class);
@@ -60,7 +62,7 @@ public class App {
         rc.register(JerseyNotFoundExceptionMapper.class);
         rc.register(GenericExceptionMapper.class);
 
-        log.info("Jersey ResourceConfig ready — 7 resource(s), 5 provider(s) registered");
+        log.info("Jersey ResourceConfig ready — 8 resource(s), 5 provider(s) registered");
 
         // 3. Jetty
         ServletContainer servletContainer = new ServletContainer(rc);
