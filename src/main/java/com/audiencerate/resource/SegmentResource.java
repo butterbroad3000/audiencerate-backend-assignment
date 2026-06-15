@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -31,29 +30,22 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import javax.sql.DataSource;
 import java.util.List;
 
 @Path("/api/segments")
-@Singleton
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Segments", description = "Audience segments — list, create, update, delete, and related data")
 public class SegmentResource {
 
     private final SegmentService segmentService;
     private final ActivationService activationService;
-    private final DataSource segmentsDs;
 
     @Inject
     public SegmentResource(SegmentService segmentService,
-                           ActivationService activationService,
-                           @com.audiencerate.pool.SegmentsDb DataSource segmentsDs) {
+                           ActivationService activationService) {
         this.segmentService = segmentService;
         this.activationService = activationService;
-        this.segmentsDs = segmentsDs;
     }
-
-    // ── List ──
 
     @GET
     @Operation(
@@ -75,8 +67,6 @@ public class SegmentResource {
         return Response.ok(result).build();
     }
 
-    // ── Get by ID ──
-
     @GET
     @Path("/{id}")
     @Operation(summary = "Get a segment by ID", description = "Returns the segment with its tags and data source IDs.")
@@ -89,8 +79,6 @@ public class SegmentResource {
         Segment segment = segmentService.getById(id);
         return Response.ok(new DataWrapper<>(segment)).build();
     }
-
-    // ── Trend ──
 
     @GET
     @Path("/{id}/trend")
@@ -105,8 +93,6 @@ public class SegmentResource {
         List<SegmentTrendPoint> trend = segmentService.getTrend(id, range);
         return Response.ok(new DataWrapper<>(trend)).build();
     }
-
-    // ── Activations (cross-context) ──
 
     @GET
     @Path("/{id}/activations")
@@ -123,8 +109,6 @@ public class SegmentResource {
         return Response.ok(result).build();
     }
 
-    // ── Create ──
-
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new segment", description = "Name is required (3–80 chars). Inserts segment, tags, and data source links in a single transaction.")
@@ -134,11 +118,9 @@ public class SegmentResource {
     public Response create(
             @Parameter(description = "Segment data", required = true)
             CreateSegmentRequest req) {
-        Segment segment = segmentService.create(req, segmentsDs);
-        return Response.status(201).entity(new DataWrapper<>(segment)).build();
+        Segment segment = segmentService.create(req);
+        return Response.status(Response.Status.CREATED).entity(new DataWrapper<>(segment)).build();
     }
-
-    // ── Update ──
 
     @PATCH
     @Path("/{id}")
@@ -154,8 +136,6 @@ public class SegmentResource {
         Segment segment = segmentService.update(id, req);
         return Response.ok(new DataWrapper<>(segment)).build();
     }
-
-    // ── Delete ──
 
     @DELETE
     @Path("/{id}")

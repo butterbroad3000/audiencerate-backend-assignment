@@ -36,14 +36,9 @@ public class ActivationDao {
         }
     }
 
-    public List<Activation> findAll(String segmentId, String destinationId) {
-        return list(segmentId, destinationId, 1, Integer.MAX_VALUE).data();
-    }
-
     public ActivationListResult list(String segmentId, String destinationId, int page, int pageSize) {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 12;
-        if (pageSize > 100) pageSize = 100;
+        page = Pagination.normalisePage(page);
+        pageSize = Pagination.normalisePageSize(pageSize);
         int offset = (page - 1) * pageSize;
 
         StringBuilder where = new StringBuilder(" WHERE 1=1");
@@ -97,10 +92,6 @@ public class ActivationDao {
         }
 
         return new ActivationListResult(result, total);
-    }
-
-    public List<Activation> findBySegmentId(String segmentId) {
-        return findAll(segmentId, null);
     }
 
     public Activation create(Connection conn, String segmentId, String destinationId) throws SQLException {

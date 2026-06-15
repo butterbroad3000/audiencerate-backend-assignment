@@ -36,14 +36,10 @@ public class SegmentDao {
         this.om = om;
     }
 
-    // ---------- List with search / filter / sort / pagination ----------
-
     public SegmentListResult list(String search, String status, String dataSourceId,
                                    String tag, String sort, int page, int pageSize) {
-        // Validate & normalise
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 12;
-        if (pageSize > 100) pageSize = 100;
+        page = Pagination.normalisePage(page);
+        pageSize = Pagination.normalisePageSize(pageSize);
         String orderClause = buildOrderClause(sort);
         int offset = (page - 1) * pageSize;
 
@@ -100,9 +96,6 @@ public class SegmentDao {
             throw new RuntimeException("Failed to count segments", e);
         }
 
-        // Number of params for the WHERE clause — reuse in main query
-        int whereParamCount = params.size();
-
         // Main data query
         sql.append("""
             SELECT s.id, s.name, s.description, s.status, s.audience_size, s.match_rate,
@@ -147,8 +140,6 @@ public class SegmentDao {
         return new SegmentListResult(segments, total);
     }
 
-    // ---------- Single segment ----------
-
     public Optional<Segment> findById(String id) {
         String sql = """
             SELECT s.id, s.name, s.description, s.status, s.audience_size, s.match_rate,
@@ -180,8 +171,6 @@ public class SegmentDao {
         }
         return Optional.empty();
     }
-
-    // ---------- Aggregate queries (for overview) ----------
 
     public int count() {
         String sql = "SELECT COUNT(*) FROM segments";
@@ -269,8 +258,6 @@ public class SegmentDao {
         return result;
     }
 
-    // ---------- Create ----------
-
     public Segment insert(Connection conn, String id, String name, String description,
                            String status, long audienceSize, BigDecimal matchRate,
                            String createdBy) throws SQLException {
@@ -320,7 +307,15 @@ public class SegmentDao {
         }
     }
 
-    // ---------- Update ----------
+    public Segment create(String id, String name, String description, String status,
+                          List<String> tags, List<String> dataSourceIds) {
+        return executeInTransaction(conn -> {
+            Segment segment = insert(conn, id, name, description, status, 0, BigDecimal.ZERO, "API");
+            insertTags(conn, id, tags);
+            insertDataSources(conn, id, dataSourceIds);
+            return findById(id).orElse(segment);
+        });
+    }
 
     public Optional<Segment> update(String id, String name, String description, String status,
                                      List<String> tags, List<String> dataSourceIds) {
@@ -363,8 +358,6 @@ public class SegmentDao {
         });
     }
 
-    // ---------- Delete ----------
-
     public boolean delete(String id) {
         String sql = "DELETE FROM segments WHERE id = ?"; // cascade deletes tags/sources/trend
         try (Connection conn = ds.getConnection();
@@ -377,8 +370,6 @@ public class SegmentDao {
         }
     }
 
-    // ---------- Helpers ----------
-
     private String generateNextId() {
         try (Connection conn = ds.getConnection();
              Statement st = conn.createStatement();
@@ -388,10 +379,11 @@ public class SegmentDao {
                 int num = Integer.parseInt(lastId.substring(4)) + 1;
                 return String.format("seg_%04d", num);
             }
+            return "seg_0001";
         } catch (SQLException e) {
             log.error("Failed to generate next segment id", e);
+            throw new RuntimeException("Failed to generate next segment id", e);
         }
-        return "seg_0037"; // fallback (36 seeded)
     }
 
     public String nextId() {
@@ -421,7 +413,8 @@ public class SegmentDao {
             return List.of();
         }
         try {
-            return om.readValue(json, new TypeReference<List<String>>() {});
+            return om.readValue(json, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Failed to parse JSON array: {}", json, e);
             return List.of();
@@ -449,7 +442,6 @@ public class SegmentDao {
         return s;
     }
 
-    // Transaction helper
     private <T> T executeInTransaction(SqlFunction<T> fn) {
         try (Connection conn = ds.getConnection()) {
             conn.setAutoCommit(false);
@@ -471,8 +463,6 @@ public class SegmentDao {
     private interface SqlFunction<T> {
         T apply(Connection conn) throws SQLException;
     }
-
-    // ---------- Inner types ----------
 
     public record SegmentListResult(List<Segment> data, long total) {}
     public record StatusCount(String status, int count) {}

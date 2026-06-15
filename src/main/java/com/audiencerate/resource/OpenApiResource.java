@@ -6,7 +6,6 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import jakarta.inject.Singleton;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 @Path("/openapi.json")
-@Singleton
 @Produces(MediaType.APPLICATION_JSON)
 public class OpenApiResource {
 

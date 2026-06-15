@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -27,7 +26,6 @@ import jakarta.ws.rs.core.Response;
 import javax.sql.DataSource;
 
 @Path("/api/activations")
-@Singleton
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Activations", description = "Segment activations to advertising destinations")
 public class ActivationResource {
@@ -66,6 +64,6 @@ public class ActivationResource {
             @Parameter(description = "Activation data", required = true)
             CreateActivationRequest req) {
         Activation activation = service.create(req, activationsDs);
-        return Response.status(201).entity(new DataWrapper<>(activation)).build();
+        return Response.status(Response.Status.CREATED).entity(new DataWrapper<>(activation)).build();
     }
 }

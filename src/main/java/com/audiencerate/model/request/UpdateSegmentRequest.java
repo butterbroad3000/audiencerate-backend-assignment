@@ -1,6 +1,5 @@
 package com.audiencerate.model.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -16,7 +15,6 @@ public record UpdateSegmentRequest(
         @Schema(description = "Status", allowableValues = {"active", "draft", "archived"})
         String status,
 
-        @JsonProperty("dataSourceIds")
         @Schema(description = "Data source IDs")
         List<String> dataSourceIds,
 

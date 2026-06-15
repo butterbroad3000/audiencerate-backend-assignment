@@ -11,8 +11,8 @@ import jakarta.ws.rs.ext.Provider;
 public class JerseyNotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
     @Override
     public Response toResponse(NotFoundException ex) {
-        return Response.status(404)
-                .entity(new ErrorEnvelope(new ErrorResponse(404, "Not found")))
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorEnvelope(new ErrorResponse(Response.Status.NOT_FOUND.getStatusCode(), "Not found")))
                 .build();
     }
 }

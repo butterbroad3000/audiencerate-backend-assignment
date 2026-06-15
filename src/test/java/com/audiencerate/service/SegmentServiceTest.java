@@ -20,16 +20,12 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,8 +34,6 @@ class SegmentServiceTest {
     @Mock SegmentDao segmentDao;
     @Mock SegmentTrendDao trendDao;
     @Mock DataSourceDao dataSourceDao;
-    @Mock DataSource dataSource;
-    @Mock Connection connection;
 
     private SegmentService service;
 
@@ -128,48 +122,30 @@ class SegmentServiceTest {
     // create
 
     @Test
-    void shouldCreateSegment() throws SQLException {
+    void shouldCreateSegment() {
         when(dataSourceDao.findExistingIds(any())).thenReturn(Set.of("ds_001"));
-        when(dataSource.getConnection()).thenReturn(connection);
         when(segmentDao.nextId()).thenReturn("seg_0100");
-        when(segmentDao.insert(any(), any(), any(), any(), any(), anyLong(), any(), any()))
+        when(segmentDao.create(eq("seg_0100"), eq("My Segment"), eq("desc"), eq("active"),
+                eq(List.of("tag1")), eq(List.of("ds_001"))))
                 .thenReturn(Instancio.of(Segment.class).set(Select.field(Segment::getId), "seg_0100").create());
-        when(segmentDao.findById("seg_0100"))
-                .thenReturn(Optional.of(Instancio.of(Segment.class).set(Select.field(Segment::getId), "seg_0100").create()));
 
         var req = new CreateSegmentRequest("My Segment", "desc", "active",
                 List.of("ds_001"), List.of("tag1"));
 
-        var result = service.create(req, dataSource);
+        var result = service.create(req);
         assertNotNull(result);
-        verify(segmentDao).insertTags(any(), eq("seg_0100"), eq(List.of("tag1")));
-        verify(segmentDao).insertDataSources(any(), eq("seg_0100"), eq(List.of("ds_001")));
-        verify(connection).commit();
     }
 
     @Test
-    void shouldDefaultStatusToDraftWhenNull() throws SQLException {
-        when(dataSource.getConnection()).thenReturn(connection);
+    void shouldDefaultStatusToDraftWhenNull() {
         when(segmentDao.nextId()).thenReturn("seg_0100");
-        when(segmentDao.insert(any(), any(), any(), any(), any(), anyLong(), any(), any()))
+        when(segmentDao.create(eq("seg_0100"), eq("Name"), eq(null), eq("draft"),
+                eq(null), eq(null)))
                 .thenReturn(Instancio.create(Segment.class));
-        when(segmentDao.findById(any())).thenReturn(Optional.of(Instancio.create(Segment.class)));
 
         var req = new CreateSegmentRequest("Name", null, null, null, null);
-        service.create(req, dataSource);
-        verify(segmentDao).insert(any(), any(), any(), any(), eq("draft"), anyLong(), any(), any());
-    }
-
-    @Test
-    void shouldRollbackOnError() throws SQLException {
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(segmentDao.nextId()).thenReturn("seg_0100");
-        doThrow(new RuntimeException("DB error")).when(segmentDao)
-                .insert(any(), any(), any(), any(), any(), anyLong(), any(), any());
-
-        var req = new CreateSegmentRequest("Name", null, null, null, null);
-        assertThrows(RuntimeException.class, () -> service.create(req, dataSource));
-        verify(connection).rollback();
+        service.create(req);
+        verify(segmentDao).create(eq("seg_0100"), eq("Name"), eq(null), eq("draft"), eq(null), eq(null));
     }
 
     @Test
@@ -177,7 +153,7 @@ class SegmentServiceTest {
         when(dataSourceDao.findExistingIds(any())).thenReturn(Set.of());
         var req = new CreateSegmentRequest("Name", null, null,
                 List.of("ds_001"), null);
-        var ex = assertThrows(ValidationException.class, () -> service.create(req, dataSource));
+        var ex = assertThrows(ValidationException.class, () -> service.create(req));
         assertTrue(ex.getDetails().containsKey("dataSourceIds"));
     }
 

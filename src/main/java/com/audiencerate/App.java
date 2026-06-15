@@ -37,15 +37,11 @@ public class App {
     private static final Logger log = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) throws Exception {
-        // 1. Guice
         Injector injector = Guice.createInjector(new AudienceRateModule());
         AppConfig config = injector.getInstance(AppConfig.class);
-        log.info("Guice Injector created");
 
-        // 2. Jersey ResourceConfig — register all resources and providers
         ResourceConfig rc = new ResourceConfig();
 
-        // Resources (injected by Guice as singletons)
         rc.register(injector.getInstance(HealthResource.class));
         rc.register(injector.getInstance(OverviewResource.class));
         rc.register(injector.getInstance(SegmentResource.class));
@@ -55,16 +51,12 @@ public class App {
         rc.register(injector.getInstance(OpenApiResource.class));
         rc.register(injector.getInstance(SwaggerUiResource.class));
 
-        // Providers
         rc.register(JacksonFeature.class);
         rc.register(ValidationExceptionMapper.class);
         rc.register(NotFoundExceptionMapper.class);
         rc.register(JerseyNotFoundExceptionMapper.class);
         rc.register(GenericExceptionMapper.class);
 
-        log.info("Jersey ResourceConfig ready — 8 resource(s), 5 provider(s) registered");
-
-        // 3. Jetty
         ServletContainer servletContainer = new ServletContainer(rc);
         ServletHolder holder = new ServletHolder(servletContainer);
 

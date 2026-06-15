@@ -3,6 +3,8 @@ package com.audiencerate.dao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.audiencerate.model.DataSourceInfo;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,9 +24,9 @@ public class DataSourceDao {
         this.ds = ds;
     }
 
-    public List<com.audiencerate.model.DataSource> findAll() {
+    public List<DataSourceInfo> findAll() {
         String sql = "SELECT id, name, type, status, profiles_count, match_rate, last_sync_at FROM data_sources ORDER BY id";
-        List<com.audiencerate.model.DataSource> result = new ArrayList<>();
+        List<DataSourceInfo> result = new ArrayList<>();
         try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -74,8 +76,8 @@ public class DataSourceDao {
         }
     }
 
-    private com.audiencerate.model.DataSource mapRow(ResultSet rs) throws SQLException {
-        return new com.audiencerate.model.DataSource(
+    private DataSourceInfo mapRow(ResultSet rs) throws SQLException {
+        return new DataSourceInfo(
                 rs.getString("id"),
                 rs.getString("name"),
                 rs.getString("type"),
