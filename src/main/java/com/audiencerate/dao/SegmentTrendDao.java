@@ -15,7 +15,8 @@ import java.util.List;
 
 public class SegmentTrendDao {
 
-    private static final Logger log = LoggerFactory.getLogger(SegmentTrendDao.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SegmentTrendDao.class);
+    private static final String ERR_QUERY_SEGMENT_TREND = "Failed to query segment_trend";
     private final DataSource ds;
 
     public SegmentTrendDao(DataSource ds) {
@@ -23,13 +24,7 @@ public class SegmentTrendDao {
     }
 
     public List<SegmentTrendPoint> findBySegmentId(String segmentId, int rangeDays) {
-        String sql = """
-            SELECT day, audience_size, matched_profiles
-            FROM segment_trend
-            WHERE segment_id = ?
-              AND day >= CURRENT_DATE - ?
-            ORDER BY day ASC
-            """;
+        String sql = SegmentTrendSql.SELECT_BY_SEGMENT_ID;
         List<SegmentTrendPoint> result = new ArrayList<>();
         try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -44,8 +39,8 @@ public class SegmentTrendDao {
                 }
             }
         } catch (SQLException e) {
-            log.error("Failed to query segment_trend for segment={}", segmentId, e);
-            throw new RuntimeException("Failed to query segment_trend", e);
+            LOG.error("{} for segment={}", ERR_QUERY_SEGMENT_TREND, segmentId, e);
+            throw new RuntimeException(ERR_QUERY_SEGMENT_TREND, e);
         }
         return result;
     }

@@ -6,9 +6,9 @@ import com.audiencerate.error.GenericExceptionMapper;
 import com.audiencerate.error.JerseyNotFoundExceptionMapper;
 import com.audiencerate.error.NotFoundExceptionMapper;
 import com.audiencerate.error.ValidationExceptionMapper;
-import com.audiencerate.pool.ActivationsDb;
-import com.audiencerate.pool.ProfilesDb;
-import com.audiencerate.pool.SegmentsDb;
+import com.audiencerate.annotations.ActivationsDb;
+import com.audiencerate.annotations.ProfilesDb;
+import com.audiencerate.annotations.SegmentsDb;
 import com.audiencerate.resource.ActivationResource;
 import com.audiencerate.resource.DataSourceResource;
 import com.audiencerate.resource.DestinationResource;
@@ -30,11 +30,12 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import javax.sql.DataSource;
 
 public class App {
 
-    private static final Logger log = LoggerFactory.getLogger(App.class);
+    private static final Logger LOG = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) throws Exception {
         Injector injector = Guice.createInjector(new AudienceRateModule());
@@ -69,38 +70,37 @@ public class App {
 
         // Graceful shutdown hook — stops Jetty and closes all HikariCP pools
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutting down...");
+            LOG.info("Shutting down...");
             try {
                 server.stop();
-                log.info("Jetty stopped");
+                LOG.info("Jetty stopped");
             } catch (Exception e) {
-                log.error("Error stopping Jetty", e);
+                LOG.error("Error stopping Jetty", e);
             }
             closePool(injector, ProfilesDb.class, "profiles");
             closePool(injector, SegmentsDb.class, "segments");
             closePool(injector, ActivationsDb.class, "activations");
-            log.info("Shutdown complete");
+            LOG.info("Shutdown complete");
         }, "shutdown-hook"));
 
         server.start();
-        log.info("AudienceRate API started on http://localhost:{}", config.httpPort());
-        log.info("Endpoints: /api/health, /api/overview, /api/segments, /api/data-sources, "
-                + "/api/destinations, /api/activations");
-        log.info("OpenAPI spec: /openapi.json");
+        LOG.info("AudienceRate API started on http://localhost:{}", config.httpPort());
+        LOG.info("Endpoints: /api/health, /api/overview, /api/segments, /api/data-sources, /api/destinations, /api/activations");
+        LOG.info("OpenAPI spec: /openapi.json");
 
         server.join();
     }
 
-    private static void closePool(Injector injector, Class<? extends java.lang.annotation.Annotation> qualifier,
+    private static void closePool(Injector injector, Class<? extends Annotation> qualifier,
                                    String name) {
         try {
             DataSource ds = injector.getInstance(Key.get(DataSource.class, qualifier));
             if (ds instanceof HikariDataSource hds) {
                 hds.close();
-                log.info("Closed {} pool", name);
+                LOG.info("Closed {} pool", name);
             }
         } catch (Exception e) {
-            log.error("Error closing {} pool", name, e);
+            LOG.error("Error closing {} pool", name, e);
         }
     }
 }

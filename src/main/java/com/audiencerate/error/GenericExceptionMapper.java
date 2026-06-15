@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 @Provider
 public class GenericExceptionMapper implements ExceptionMapper<Exception> {
 
-    private static final Logger log = LoggerFactory.getLogger(GenericExceptionMapper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GenericExceptionMapper.class);
 
     @Override
     public Response toResponse(Exception ex) {
-        log.error("Unhandled exception", ex);
+        LOG.error("Unhandled exception", ex);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(new ErrorEnvelope(new ErrorResponse(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Internal server error")))
                 .build();

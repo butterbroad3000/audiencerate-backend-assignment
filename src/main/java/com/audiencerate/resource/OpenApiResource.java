@@ -20,7 +20,7 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 public class OpenApiResource {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenApiResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OpenApiResource.class);
 
     private volatile OpenAPI cachedSpec;
 
@@ -55,7 +55,7 @@ public class OpenApiResource {
             }
             return Response.ok(Json.pretty(cachedSpec)).build();
         } catch (Exception e) {
-            log.error("Failed to generate OpenAPI spec", e);
+            LOG.error("Failed to generate OpenAPI spec", e);
             return Response.serverError()
                     .entity("{\"error\": \"Failed to generate OpenAPI spec\"}")
                     .build();

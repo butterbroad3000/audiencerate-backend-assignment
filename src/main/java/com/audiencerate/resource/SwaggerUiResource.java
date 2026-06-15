@@ -15,7 +15,7 @@ import java.io.InputStream;
 @Path("/swagger-ui")
 public class SwaggerUiResource {
 
-    private static final Logger log = LoggerFactory.getLogger(SwaggerUiResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SwaggerUiResource.class);
     private static final String WEBJAR = "META-INF/resources/webjars/swagger-ui/5.17.14/";
 
     @GET
@@ -49,7 +49,7 @@ public class SwaggerUiResource {
     @GET
     @Path("/{file:.+}")
     public Response staticFile(@PathParam("file") String file) {
-        String path = WEBJAR + file;
+        String path = "%s%s".formatted(WEBJAR, file);
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
         if (is == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -60,7 +60,7 @@ public class SwaggerUiResource {
             is.close();
             return Response.ok(bytes).type(mediaType).build();
         } catch (IOException e) {
-            log.error("Failed to read swagger-ui file: {}", file, e);
+            LOG.error("Failed to read swagger-ui file: {}", file, e);
             return Response.serverError().build();
         }
     }

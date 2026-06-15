@@ -1,5 +1,7 @@
 \connect activations
 
+CREATE SEQUENCE IF NOT EXISTS activations_id_seq START 20;
+
 CREATE TABLE destinations (
     id    TEXT PRIMARY KEY,
     name  TEXT NOT NULL,

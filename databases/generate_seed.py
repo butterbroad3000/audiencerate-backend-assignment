@@ -102,6 +102,7 @@ for i, name in enumerate(SEG_NAMES, 1):
 
 with open(os.path.join(OUT, "02-segments.sql"), "w") as f:
     f.write("\\connect segments\n\n")
+    f.write("CREATE SEQUENCE IF NOT EXISTS segments_id_seq START 37;\n\n")
     f.write("""CREATE TABLE segments (
     id            TEXT PRIMARY KEY,
     name          TEXT NOT NULL,
@@ -197,6 +198,7 @@ for s in segments:
 
 with open(os.path.join(OUT, "03-activations.sql"), "w") as f:
     f.write("\\connect activations\n\n")
+    f.write("CREATE SEQUENCE IF NOT EXISTS activations_id_seq START 20;\n\n")
     f.write("""CREATE TABLE destinations (
     id    TEXT PRIMARY KEY,
     name  TEXT NOT NULL,

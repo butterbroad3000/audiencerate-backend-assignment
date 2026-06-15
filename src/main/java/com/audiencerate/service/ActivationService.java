@@ -4,12 +4,12 @@ import com.audiencerate.dao.ActivationDao;
 import com.audiencerate.dao.DestinationDao;
 import com.audiencerate.dao.SegmentDao;
 import com.audiencerate.error.NotFoundException;
-import com.audiencerate.error.ValidationException;
 import com.audiencerate.model.Activation;
 import com.audiencerate.model.Destination;
 import com.audiencerate.model.response.PagedResponse;
 import com.audiencerate.model.response.PaginationMeta;
 import com.audiencerate.model.request.CreateActivationRequest;
+import com.audiencerate.validation.ActivationValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,15 +22,22 @@ import java.util.stream.Collectors;
 
 public class ActivationService {
 
-    private static final Logger log = LoggerFactory.getLogger(ActivationService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ActivationService.class);
+    private static final String ERR_CREATE_ACTIVATION = "Failed to create activation";
     private final ActivationDao activationDao;
     private final DestinationDao destinationDao;
     private final SegmentDao segmentDao;
+    private final ActivationValidator validator;
+    private final DataSource activationsDs;
 
-    public ActivationService(ActivationDao activationDao, DestinationDao destinationDao, SegmentDao segmentDao) {
+    public ActivationService(ActivationDao activationDao, DestinationDao destinationDao,
+                             SegmentDao segmentDao, ActivationValidator validator,
+                             DataSource activationsDs) {
         this.activationDao = activationDao;
         this.destinationDao = destinationDao;
         this.segmentDao = segmentDao;
+        this.validator = validator;
+        this.activationsDs = activationsDs;
     }
 
     public PagedResponse<Activation> list(String segmentId, String destinationId, int page, int pageSize) {
@@ -45,7 +52,7 @@ public class ActivationService {
     public PagedResponse<Activation> getActivationsForSegment(String segmentId, int page, int pageSize) {
         // Verify segment exists (segments DB)
         segmentDao.findById(segmentId)
-                .orElseThrow(() -> new NotFoundException("Segment not found: " + segmentId));
+                .orElseThrow(() -> new NotFoundException("Segment not found: %s".formatted(segmentId)));
 
         // Fetch activations (activations DB) with pagination
         ActivationDao.ActivationListResult result = activationDao.list(segmentId, null, page, pageSize);
@@ -58,32 +65,8 @@ public class ActivationService {
                 new PaginationMeta(page, pageSize, result.total(), totalPages));
     }
 
-    public Activation create(CreateActivationRequest req, DataSource activationsDs) {
-        Map<String, String> errors = new java.util.LinkedHashMap<>();
-        if (req.segmentId() == null || req.segmentId().isBlank()) {
-            errors.put("segmentId", "Segment ID is required");
-        }
-        if (req.destinationId() == null || req.destinationId().isBlank()) {
-            errors.put("destinationId", "Destination ID is required");
-        }
-        if (!errors.isEmpty()) {
-            throw new ValidationException("Validation failed", errors);
-        }
-
-        // Validate segment exists (segments DB)
-        if (segmentDao.findById(req.segmentId()).isEmpty()) {
-            throw new ValidationException("Validation failed",
-                    Map.of("segmentId", "Segment not found: " + req.segmentId()));
-        }
-
-        // Validate destination exists (activations DB)
-        List<Destination> destinations = destinationDao.findAll();
-        boolean destExists = destinations.stream()
-                .anyMatch(d -> d.id().equals(req.destinationId()));
-        if (!destExists) {
-            throw new ValidationException("Validation failed",
-                    Map.of("destinationId", "Destination not found: " + req.destinationId()));
-        }
+    public Activation create(CreateActivationRequest req) {
+        validator.validateCreate(req);
 
         // Create activation
         try (Connection conn = activationsDs.getConnection()) {
@@ -93,25 +76,23 @@ public class ActivationService {
                 conn.commit();
 
                 // Enrich with destination
-                Destination dest = destinations.stream()
-                        .filter(d -> d.id().equals(activation.getDestinationId()))
-                        .findFirst().orElse(null);
-                activation.setDestination(dest);
+                Destination destination = destinationDao.findById(activation.getDestinationId()).orElse(null);
+                activation.setDestination(destination);
                 return activation;
             } catch (Exception e) {
                 conn.rollback();
-                log.error("Failed to create activation", e);
-                throw new RuntimeException("Failed to create activation", e);
+                LOG.error(ERR_CREATE_ACTIVATION, e);
+                throw new RuntimeException(ERR_CREATE_ACTIVATION, e);
             }
         } catch (SQLException e) {
-            log.error("Failed to create activation", e);
-            throw new RuntimeException("Failed to create activation", e);
+            LOG.error(ERR_CREATE_ACTIVATION, e);
+            throw new RuntimeException(ERR_CREATE_ACTIVATION, e);
         }
     }
 
     private List<Activation> enrichWithDestinations(List<Activation> activations) {
         Map<String, Destination> destMap = destinationDao.findAll().stream()
-                .collect(Collectors.toMap(Destination::id, d -> d));
+                .collect(Collectors.toMap(Destination::id, destination -> destination));
 
         for (Activation activation : activations) {
             activation.setDestination(destMap.get(activation.getDestinationId()));

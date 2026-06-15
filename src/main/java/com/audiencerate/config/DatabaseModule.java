@@ -1,8 +1,8 @@
 package com.audiencerate.config;
 
-import com.audiencerate.pool.ActivationsDb;
-import com.audiencerate.pool.ProfilesDb;
-import com.audiencerate.pool.SegmentsDb;
+import com.audiencerate.annotations.ActivationsDb;
+import com.audiencerate.annotations.ProfilesDb;
+import com.audiencerate.annotations.SegmentsDb;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -15,13 +15,13 @@ import javax.sql.DataSource;
 
 public class DatabaseModule extends AbstractModule {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabaseModule.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DatabaseModule.class);
 
     @Provides
     @Singleton
     AppConfig provideAppConfig() {
         AppConfig config = AppConfig.fromEnv();
-        log.info("Loaded configuration: profiles={}, segments={}, activations={}, port={}",
+        LOG.info("Loaded configuration: profiles={}, segments={}, activations={}, port={}",
                 config.profilesJdbcUrl(), config.segmentsJdbcUrl(),
                 config.activationsJdbcUrl(), config.httpPort());
         return config;
@@ -49,7 +49,7 @@ public class DatabaseModule extends AbstractModule {
     }
 
     private HikariDataSource createPool(String poolName, String jdbcUrl, AppConfig config) {
-        log.info("Creating connection pool '{}' → {}", poolName, jdbcUrl);
+        LOG.info("Creating connection pool '{}' → {}", poolName, jdbcUrl);
         HikariConfig hc = new HikariConfig();
         hc.setJdbcUrl(jdbcUrl);
         hc.setUsername(config.dbUser());
@@ -59,7 +59,6 @@ public class DatabaseModule extends AbstractModule {
         hc.setConnectionTimeout(config.connectionTimeoutMs());
         hc.setIdleTimeout(600_000);       // 10 min
         hc.setMaxLifetime(1_800_000);     // 30 min
-        hc.setConnectionTestQuery("SELECT 1");
         hc.setPoolName(poolName);
         return new HikariDataSource(hc);
     }

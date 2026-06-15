@@ -11,10 +11,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class DestinationDao {
 
-    private static final Logger log = LoggerFactory.getLogger(DestinationDao.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DestinationDao.class);
+    private static final String ERR_QUERY_DESTINATIONS = "Failed to query destinations";
     private final DataSource ds;
 
     public DestinationDao(DataSource ds) {
@@ -22,7 +24,7 @@ public class DestinationDao {
     }
 
     public List<Destination> findAll() {
-        String sql = "SELECT id, name, color FROM destinations ORDER BY id";
+        String sql = DestinationSql.SELECT_ALL;
         List<Destination> result = new ArrayList<>();
         try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -31,10 +33,27 @@ public class DestinationDao {
                 result.add(mapRow(rs));
             }
         } catch (SQLException e) {
-            log.error("Failed to query destinations", e);
-            throw new RuntimeException("Failed to query destinations", e);
+            LOG.error(ERR_QUERY_DESTINATIONS, e);
+            throw new RuntimeException(ERR_QUERY_DESTINATIONS, e);
         }
         return result;
+    }
+
+    public Optional<Destination> findById(String id) {
+        String sql = DestinationSql.SELECT_BY_ID;
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            LOG.error(ERR_QUERY_DESTINATIONS, e);
+            throw new RuntimeException(ERR_QUERY_DESTINATIONS, e);
+        }
+        return Optional.empty();
     }
 
     private Destination mapRow(ResultSet rs) throws SQLException {

@@ -1,4 +1,4 @@
-package com.audiencerate.pool;
+package com.audiencerate.annotations;
 
 import com.google.inject.BindingAnnotation;
 

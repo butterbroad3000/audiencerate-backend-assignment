@@ -1,11 +1,9 @@
 package com.audiencerate.service;
 
-import com.audiencerate.dao.DataSourceDao;
 import com.audiencerate.dao.SegmentDao;
 import com.audiencerate.dao.SegmentDao.SegmentListResult;
 import com.audiencerate.dao.SegmentTrendDao;
 import com.audiencerate.error.NotFoundException;
-import com.audiencerate.error.ValidationException;
 import com.audiencerate.model.Segment;
 import com.audiencerate.model.SegmentTrendPoint;
 import com.audiencerate.model.request.CreateSegmentRequest;
@@ -15,22 +13,17 @@ import com.audiencerate.model.response.PaginationMeta;
 import com.audiencerate.validation.SegmentValidator;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class SegmentService {
 
     private final SegmentDao segmentDao;
     private final SegmentTrendDao trendDao;
     private final SegmentValidator validator;
-    private final DataSourceDao dataSourceDao;
 
-    public SegmentService(SegmentDao segmentDao, SegmentTrendDao trendDao, SegmentValidator validator,
-                          DataSourceDao dataSourceDao) {
+    public SegmentService(SegmentDao segmentDao, SegmentTrendDao trendDao, SegmentValidator validator) {
         this.segmentDao = segmentDao;
         this.trendDao = trendDao;
         this.validator = validator;
-        this.dataSourceDao = dataSourceDao;
     }
 
     public PagedResponse<Segment> list(String search, String status, String dataSourceId,
@@ -44,19 +37,15 @@ public class SegmentService {
 
     public Segment getById(String id) {
         return segmentDao.findById(id)
-                .orElseThrow(() -> new NotFoundException("Segment not found: " + id));
+                .orElseThrow(() -> new NotFoundException("Segment not found: %s".formatted(id)));
     }
 
     public List<SegmentTrendPoint> getTrend(String id, int rangeDays) {
         // Verify segment exists
         if (segmentDao.findById(id).isEmpty()) {
-            throw new NotFoundException("Segment not found: " + id);
+            throw new NotFoundException("Segment not found: %s".formatted(id));
         }
-        // Validate range
-        if (rangeDays < 7 || rangeDays > 180) {
-            throw new ValidationException("Validation failed",
-                    Map.of("range", "Range must be between 7 and 180 days"));
-        }
+        validator.validateTrendRange(rangeDays);
         return trendDao.findBySegmentId(id, rangeDays);
     }
 
@@ -65,32 +54,21 @@ public class SegmentService {
         return segmentDao.update(id, req.name() != null ? req.name().trim() : null,
                         req.description(), req.status(),
                         req.tags(), req.dataSourceIds())
-                .orElseThrow(() -> new NotFoundException("Segment not found: " + id));
+                .orElseThrow(() -> new NotFoundException("Segment not found: %s".formatted(id)));
     }
 
     public void delete(String id) {
         if (!segmentDao.delete(id)) {
-            throw new NotFoundException("Segment not found: " + id);
+            throw new NotFoundException("Segment not found: %s".formatted(id));
         }
     }
 
     public Segment create(CreateSegmentRequest req) {
         validator.validateCreate(req);
 
-        if (req.dataSourceIds() != null && !req.dataSourceIds().isEmpty()) {
-            Set<String> existingIds = dataSourceDao.findExistingIds(req.dataSourceIds());
-            for (String dsId : req.dataSourceIds()) {
-                if (!existingIds.contains(dsId)) {
-                    throw new ValidationException("Validation failed",
-                            Map.of("dataSourceIds", "Data source not found: " + dsId));
-                }
-            }
-        }
-
-        String id = segmentDao.nextId();
         String status = req.status() != null ? req.status() : "draft";
 
-        return segmentDao.create(id, req.name().trim(), req.description(), status,
+        return segmentDao.create(req.name().trim(), req.description(), status,
                 req.tags(), req.dataSourceIds());
     }
 }

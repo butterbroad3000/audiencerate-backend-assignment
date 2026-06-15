@@ -23,21 +23,16 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import javax.sql.DataSource;
-
 @Path("/api/activations")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Activations", description = "Segment activations to advertising destinations")
 public class ActivationResource {
 
     private final ActivationService service;
-    private final DataSource activationsDs;
 
     @Inject
-    public ActivationResource(ActivationService service,
-                              @com.audiencerate.pool.ActivationsDb DataSource activationsDs) {
+    public ActivationResource(ActivationService service) {
         this.service = service;
-        this.activationsDs = activationsDs;
     }
 
     @GET
@@ -48,7 +43,7 @@ public class ActivationResource {
             @Parameter(description = "Filter by destination ID") @QueryParam("destinationId") String destinationId,
             @Parameter(description = "Page number (1-based)") @QueryParam("page") @DefaultValue("1") int page,
             @Parameter(description = "Items per page (max 100)") @QueryParam("pageSize") @DefaultValue("12") int pageSize) {
-        PagedResponse<com.audiencerate.model.Activation> result = service.list(segmentId, destinationId, page, pageSize);
+        PagedResponse<Activation> result = service.list(segmentId, destinationId, page, pageSize);
         return Response.ok(result).build();
     }
 
@@ -63,7 +58,7 @@ public class ActivationResource {
     public Response create(
             @Parameter(description = "Activation data", required = true)
             CreateActivationRequest req) {
-        Activation activation = service.create(req, activationsDs);
+        Activation activation = service.create(req);
         return Response.status(Response.Status.CREATED).entity(new DataWrapper<>(activation)).build();
     }
 }

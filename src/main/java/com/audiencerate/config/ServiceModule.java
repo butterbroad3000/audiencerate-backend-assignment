@@ -11,19 +11,25 @@ import com.audiencerate.service.DestinationService;
 import com.audiencerate.service.HealthService;
 import com.audiencerate.service.OverviewService;
 import com.audiencerate.service.SegmentService;
+import com.audiencerate.annotations.ActivationsDb;
+import com.audiencerate.annotations.ProfilesDb;
+import com.audiencerate.annotations.SegmentsDb;
+import com.audiencerate.validation.ActivationValidator;
 import com.audiencerate.validation.SegmentValidator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+
+import javax.sql.DataSource;
 
 public class ServiceModule extends AbstractModule {
 
     @Provides
     @Singleton
     HealthService provideHealthService(
-            @com.audiencerate.pool.ProfilesDb javax.sql.DataSource profilesDs,
-            @com.audiencerate.pool.SegmentsDb javax.sql.DataSource segmentsDs,
-            @com.audiencerate.pool.ActivationsDb javax.sql.DataSource activationsDs) {
+            @ProfilesDb DataSource profilesDs,
+            @SegmentsDb DataSource segmentsDs,
+            @ActivationsDb DataSource activationsDs) {
         return new HealthService(profilesDs, segmentsDs, activationsDs);
     }
 
@@ -51,21 +57,29 @@ public class ServiceModule extends AbstractModule {
     @Provides
     @Singleton
     SegmentService provideSegmentService(SegmentDao segmentDao, SegmentTrendDao trendDao,
-                                          SegmentValidator validator, DataSourceDao dataSourceDao) {
-        return new SegmentService(segmentDao, trendDao, validator, dataSourceDao);
+                                          SegmentValidator validator) {
+        return new SegmentService(segmentDao, trendDao, validator);
     }
 
     @Provides
     @Singleton
     ActivationService provideActivationService(ActivationDao activationDao,
                                                 DestinationDao destinationDao,
-                                                SegmentDao segmentDao) {
-        return new ActivationService(activationDao, destinationDao, segmentDao);
+                                                SegmentDao segmentDao,
+                                                ActivationValidator validator,
+                                                @ActivationsDb DataSource activationsDs) {
+        return new ActivationService(activationDao, destinationDao, segmentDao, validator, activationsDs);
     }
 
     @Provides
     @Singleton
-    SegmentValidator provideSegmentValidator() {
-        return new SegmentValidator();
+    SegmentValidator provideSegmentValidator(DataSourceDao dataSourceDao) {
+        return new SegmentValidator(dataSourceDao);
+    }
+
+    @Provides
+    @Singleton
+    ActivationValidator provideActivationValidator(SegmentDao segmentDao, DestinationDao destinationDao) {
+        return new ActivationValidator(segmentDao, destinationDao);
     }
 }

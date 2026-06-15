@@ -1,5 +1,7 @@
 \connect segments
 
+CREATE SEQUENCE IF NOT EXISTS segments_id_seq START 37;
+
 CREATE TABLE segments (
     id            TEXT PRIMARY KEY,
     name          TEXT NOT NULL,

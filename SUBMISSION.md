@@ -47,7 +47,7 @@ mvn clean package && java -jar target/audiencerate-backend-1.0.0.jar
 4. Testcontainers — integration tests against real PostgreSQL instead of mocking DAOs
 
 ## Notes
-- Time spent: ~6 hours
+- Time spent: ~6hours (+1 hour for last commit)
 - AI tools used: Claude Code — architecture, boilerplate, code review, tests, docs and comments
 
 ---

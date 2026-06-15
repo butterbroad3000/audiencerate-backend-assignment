@@ -7,7 +7,6 @@ import com.audiencerate.dao.SegmentDao.StatusCount;
 import com.audiencerate.model.Overview;
 import com.audiencerate.model.Overview.Kpis;
 import com.audiencerate.model.Overview.TopSegment;
-import com.audiencerate.model.Segment;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -56,7 +55,7 @@ public class OverviewService {
 
         // Top 5 segments by audience size
         List<TopSegment> topSegments = segmentDao.findTopByAudienceSize(5).stream()
-                .map(s -> new TopSegment(s.getId(), s.getName(), s.getAudienceSize()))
+                .map(segment -> new TopSegment(segment.id(), segment.name(), segment.audienceSize()))
                 .toList();
 
         return new Overview(kpis, byStatus, topSegments);

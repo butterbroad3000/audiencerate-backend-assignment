@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 public class HealthService {
 
-    private static final Logger log = LoggerFactory.getLogger(HealthService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HealthService.class);
     private final DataSource profilesDs;
     private final DataSource segmentsDs;
     private final DataSource activationsDs;
@@ -37,7 +37,7 @@ public class HealthService {
             rs.next();
             builder.up(name);
         } catch (SQLException e) {
-            log.error("Health check failed for {}", name, e);
+            LOG.error("Health check failed for {}", name, e);
             builder.down(name);
         }
     }
