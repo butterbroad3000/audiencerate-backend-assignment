@@ -1,6 +1,5 @@
 package com.audiencerate.resource;
 
-import jakarta.inject.Singleton;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Path("/swagger-ui")
-@Singleton
 public class SwaggerUiResource {
 
     private static final Logger log = LoggerFactory.getLogger(SwaggerUiResource.class);
@@ -54,7 +52,7 @@ public class SwaggerUiResource {
         String path = WEBJAR + file;
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
         if (is == null) {
-            return Response.status(404).build();
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
         String mediaType = file.endsWith(".css") ? "text/css" : "application/javascript";
         try {

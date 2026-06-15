@@ -13,20 +13,13 @@ import com.audiencerate.model.request.UpdateSegmentRequest;
 import com.audiencerate.model.response.PagedResponse;
 import com.audiencerate.model.response.PaginationMeta;
 import com.audiencerate.validation.SegmentValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class SegmentService {
 
-    private static final Logger log = LoggerFactory.getLogger(SegmentService.class);
     private final SegmentDao segmentDao;
     private final SegmentTrendDao trendDao;
     private final SegmentValidator validator;
@@ -81,10 +74,9 @@ public class SegmentService {
         }
     }
 
-    public Segment create(CreateSegmentRequest req, DataSource ds) {
+    public Segment create(CreateSegmentRequest req) {
         validator.validateCreate(req);
 
-        // Validate dataSourceIds exist in profiles DB (cross-database referential integrity)
         if (req.dataSourceIds() != null && !req.dataSourceIds().isEmpty()) {
             Set<String> existingIds = dataSourceDao.findExistingIds(req.dataSourceIds());
             for (String dsId : req.dataSourceIds()) {
@@ -98,25 +90,7 @@ public class SegmentService {
         String id = segmentDao.nextId();
         String status = req.status() != null ? req.status() : "draft";
 
-        try (Connection conn = ds.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                Segment segment = segmentDao.insert(conn, id, req.name().trim(),
-                        req.description(), status, 0, BigDecimal.ZERO, "API");
-                segmentDao.insertTags(conn, id, req.tags());
-                segmentDao.insertDataSources(conn, id, req.dataSourceIds());
-                conn.commit();
-
-                // Re-read to get tags and data sources populated
-                return segmentDao.findById(id).orElse(segment);
-            } catch (Exception e) {
-                conn.rollback();
-                log.error("Failed to create segment", e);
-                throw new RuntimeException("Failed to create segment", e);
-            }
-        } catch (SQLException e) {
-            log.error("Failed to create segment", e);
-            throw new RuntimeException("Failed to create segment", e);
-        }
+        return segmentDao.create(id, req.name().trim(), req.description(), status,
+                req.tags(), req.dataSourceIds());
     }
 }

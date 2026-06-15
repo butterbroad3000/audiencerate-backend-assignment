@@ -10,8 +10,8 @@ import jakarta.ws.rs.ext.Provider;
 public class ValidationExceptionMapper implements ExceptionMapper<ValidationException> {
     @Override
     public Response toResponse(ValidationException ex) {
-        return Response.status(400)
-                .entity(new ErrorEnvelope(new ErrorResponse(400, ex.getMessage(), ex.getDetails())))
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new ErrorEnvelope(new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), ex.getMessage(), ex.getDetails())))
                 .build();
     }
 }

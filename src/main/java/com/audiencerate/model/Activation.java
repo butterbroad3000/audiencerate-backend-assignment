@@ -1,7 +1,6 @@
 package com.audiencerate.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.OffsetDateTime;
@@ -12,26 +11,21 @@ public class Activation {
     @Schema(description = "Activation ID")
     private String id;
 
-    @JsonProperty("segmentId")
     @Schema(description = "Segment ID")
     private String segmentId;
 
-    @JsonProperty("destinationId")
     @Schema(description = "Destination ID")
     private String destinationId;
 
     @Schema(description = "Status", allowableValues = {"live", "syncing", "paused", "error"})
     private String status;
 
-    @JsonProperty("syncedProfiles")
     @Schema(description = "Synced profiles")
     private long syncedProfiles;
 
-    @JsonProperty("createdAt")
     @Schema(description = "Created at")
     private OffsetDateTime createdAt;
 
-    @JsonProperty("lastSyncAt")
     @Schema(description = "Last sync at")
     private OffsetDateTime lastSyncAt;
 

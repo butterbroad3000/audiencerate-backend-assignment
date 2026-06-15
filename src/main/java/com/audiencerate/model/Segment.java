@@ -1,6 +1,5 @@
 package com.audiencerate.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -21,30 +20,24 @@ public class Segment {
     @Schema(description = "Status", allowableValues = {"active", "draft", "archived"})
     private String status;
 
-    @JsonProperty("audienceSize")
     @Schema(description = "Audience size")
     private long audienceSize;
 
-    @JsonProperty("matchRate")
     @Schema(description = "Match rate")
     private BigDecimal matchRate;
 
     @Schema(description = "Tags")
     private List<String> tags;
 
-    @JsonProperty("dataSourceIds")
     @Schema(description = "Data source IDs")
     private List<String> dataSourceIds;
 
-    @JsonProperty("createdBy")
     @Schema(description = "Created by")
     private String createdBy;
 
-    @JsonProperty("createdAt")
     @Schema(description = "Created at")
     private OffsetDateTime createdAt;
 
-    @JsonProperty("updatedAt")
     @Schema(description = "Updated at")
     private OffsetDateTime updatedAt;
 

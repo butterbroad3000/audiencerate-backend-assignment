@@ -16,8 +16,8 @@ public class GenericExceptionMapper implements ExceptionMapper<Exception> {
     @Override
     public Response toResponse(Exception ex) {
         log.error("Unhandled exception", ex);
-        return Response.status(500)
-                .entity(new ErrorEnvelope(new ErrorResponse(500, "Internal server error")))
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorEnvelope(new ErrorResponse(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Internal server error")))
                 .build();
     }
 }

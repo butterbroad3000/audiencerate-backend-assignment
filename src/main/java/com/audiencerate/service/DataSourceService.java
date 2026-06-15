@@ -1,7 +1,7 @@
 package com.audiencerate.service;
 
 import com.audiencerate.dao.DataSourceDao;
-import com.audiencerate.model.DataSource;
+import com.audiencerate.model.DataSourceInfo;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class DataSourceService {
         this.dao = dao;
     }
 
-    public List<DataSource> list() {
+    public List<DataSourceInfo> list() {
         return dao.findAll();
     }
 }
