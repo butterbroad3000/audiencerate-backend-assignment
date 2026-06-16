@@ -8,7 +8,7 @@ public final class PaginationUtils {
     private PaginationUtils() {}
 
     public static final int MIN_PAGE = 1;
-    public static final int DEFAULT_PAGE_SIZE = 15;
+    public static final int DEFAULT_PAGE_SIZE = 12;
     public static final int MAX_PAGE_SIZE = 100;
 
     public static int normalisePage(int page) {

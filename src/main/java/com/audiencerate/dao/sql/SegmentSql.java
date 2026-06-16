@@ -1,4 +1,6 @@
-package com.audiencerate.dao;
+package com.audiencerate.dao.sql;
+
+import com.audiencerate.dao.SegmentDao;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +15,7 @@ public final class SegmentSql {
 
     // ── Column selection (reused across multiple queries) ──
 
-    static final String SELECT_COLUMNS = """
+    public static final String SELECT_COLUMNS = """
             SELECT s.id, s.name, s.description, s.status, s.audience_size, s.match_rate,
                    s.created_by, s.created_at, s.updated_at,
                    COALESCE(
@@ -31,36 +33,36 @@ public final class SegmentSql {
 
     // ── Simple queries ──
 
-    static final String COUNT_ALL = "SELECT COUNT(*) FROM segments";
+    public static final String COUNT_ALL = "SELECT COUNT(*) FROM segments";
 
-    static final String COUNT_BY_STATUS = "SELECT COUNT(*) FROM segments WHERE status = ?";
+    public static final String COUNT_BY_STATUS = "SELECT COUNT(*) FROM segments WHERE status = ?";
 
-    static final String COUNT_GROUP_BY_STATUS =
+    public static final String COUNT_GROUP_BY_STATUS =
             "SELECT status, COUNT(*) as cnt FROM segments GROUP BY status ORDER BY status";
 
-    static final String AVG_MATCH_RATE = "SELECT COALESCE(AVG(match_rate), 0) FROM segments";
+    public static final String AVG_MATCH_RATE = "SELECT COALESCE(AVG(match_rate), 0) FROM segments";
 
-    static final String DELETE_BY_ID = "DELETE FROM segments WHERE id = ?";
+    public static final String DELETE_BY_ID = "DELETE FROM segments WHERE id = ?";
 
-    static final String FIND_BY_ID = SELECT_COLUMNS + " WHERE s.id = ?";
+    public static final String FIND_BY_ID = SELECT_COLUMNS + " WHERE s.id = ?";
 
-    static final String FIND_TOP_BY_AUDIENCE_SIZE = SELECT_COLUMNS + " ORDER BY s.audience_size DESC LIMIT ?";
+    public static final String FIND_TOP_BY_AUDIENCE_SIZE = SELECT_COLUMNS + " ORDER BY s.audience_size DESC LIMIT ?";
 
-    static final String INSERT = """
+    public static final String INSERT = """
             INSERT INTO segments (id, name, description, status, audience_size, match_rate, created_by, created_at, updated_at)
             VALUES ('seg_' || LPAD(nextval('segments_id_seq')::text, 4, '0'), ?, ?, ?, ?, ?, ?, now(), now())
             RETURNING id, name, description, status, audience_size, match_rate, created_by, created_at, updated_at
             """;
 
-    static final String INSERT_TAG =
+    public static final String INSERT_TAG =
             "INSERT INTO segment_tags (segment_id, tag) VALUES (?, ?) ON CONFLICT DO NOTHING";
 
-    static final String INSERT_DATA_SOURCE =
+    public static final String INSERT_DATA_SOURCE =
             "INSERT INTO segment_data_sources (segment_id, data_source_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
 
-    static final String DELETE_TAGS_BY_SEGMENT = "DELETE FROM segment_tags WHERE segment_id = ?";
+    public static final String DELETE_TAGS_BY_SEGMENT = "DELETE FROM segment_tags WHERE segment_id = ?";
 
-    static final String DELETE_SOURCES_BY_SEGMENT = "DELETE FROM segment_data_sources WHERE segment_id = ?";
+    public static final String DELETE_SOURCES_BY_SEGMENT = "DELETE FROM segment_data_sources WHERE segment_id = ?";
 
     // ── Allowed sort fields ──
 

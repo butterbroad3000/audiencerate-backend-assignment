@@ -1,5 +1,6 @@
 package com.audiencerate.dao;
 
+import com.audiencerate.dao.sql.DestinationSql;
 import com.audiencerate.model.Destination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

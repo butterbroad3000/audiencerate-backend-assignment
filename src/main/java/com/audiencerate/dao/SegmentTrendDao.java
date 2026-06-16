@@ -1,5 +1,6 @@
 package com.audiencerate.dao;
 
+import com.audiencerate.dao.sql.SegmentTrendSql;
 import com.audiencerate.model.SegmentTrendPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

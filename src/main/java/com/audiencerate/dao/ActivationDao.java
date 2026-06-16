@@ -1,5 +1,6 @@
 package com.audiencerate.dao;
 
+import com.audiencerate.dao.sql.ActivationSql;
 import com.audiencerate.model.Activation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,27 +46,43 @@ public class ActivationDao {
         ActivationSql.ListQuery query = ActivationSql.buildListQuery(segmentId, destinationId, normalisedPageSize, offset);
         List<Object> params = query.params();
 
-        // Count
-        long total = 0;
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query.countSql())) {
-            for (int i = 0; i < params.size() - 2; i++) {
-                ps.setObject(i + 1, params.get(i));
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    total = rs.getLong(1);
-                }
+        try (Connection conn = ds.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                final var total = executeCountQuery(conn, query, params);
+                final var result = executeListDataQuery(conn, query, params);
+                conn.commit();
+                return new ActivationListResult(result, total);
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
             }
         } catch (SQLException e) {
             LOG.error(ERR_COUNT_ACTIVATIONS, e);
             throw new RuntimeException(ERR_COUNT_ACTIVATIONS, e);
         }
+    }
 
-        // Data
+    private long executeCountQuery(Connection conn, ActivationSql.ListQuery query, List<Object> params) {
+        try (PreparedStatement ps = conn.prepareStatement(query.countSql())) {
+            for (int i = 0; i < params.size() - 2; i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+            return 0;
+        } catch (SQLException e) {
+            LOG.error(ERR_COUNT_ACTIVATIONS, e);
+            throw new RuntimeException(ERR_COUNT_ACTIVATIONS, e);
+        }
+    }
+
+    private List<Activation> executeListDataQuery(Connection conn, ActivationSql.ListQuery query, List<Object> params) {
         List<Activation> result = new ArrayList<>();
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query.dataSql())) {
+        try (PreparedStatement ps = conn.prepareStatement(query.dataSql())) {
             for (int i = 0; i < params.size(); i++) {
                 ps.setObject(i + 1, params.get(i));
             }
@@ -74,12 +91,11 @@ public class ActivationDao {
                     result.add(mapRow(rs));
                 }
             }
+            return result;
         } catch (SQLException e) {
             LOG.error(ERR_QUERY_ACTIVATIONS, e);
             throw new RuntimeException(ERR_QUERY_ACTIVATIONS, e);
         }
-
-        return new ActivationListResult(result, total);
     }
 
     public Activation create(Connection conn, String segmentId, String destinationId) throws SQLException {

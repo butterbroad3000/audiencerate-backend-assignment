@@ -1,4 +1,6 @@
-package com.audiencerate.dao;
+package com.audiencerate.dao.sql;
+
+import com.audiencerate.dao.ActivationDao;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,12 +12,12 @@ public final class ActivationSql {
 
     private ActivationSql() {}
 
-    static final String COUNT_ALL = "SELECT COUNT(*) FROM activations";
+    public static final String COUNT_ALL = "SELECT COUNT(*) FROM activations";
 
-    static final String SELECT_COLUMNS =
+    public static final String SELECT_COLUMNS =
             "SELECT id, segment_id, destination_id, status, synced_profiles, created_at, last_sync_at FROM activations";
 
-    static final String INSERT = """
+    public static final String INSERT = """
             INSERT INTO activations (id, segment_id, destination_id, status, synced_profiles, created_at, last_sync_at)
             VALUES ('act_' || LPAD(nextval('activations_id_seq')::text, 4, '0'), ?, ?, 'syncing', 0, now(), now())
             RETURNING id, segment_id, destination_id, status, synced_profiles, created_at, last_sync_at

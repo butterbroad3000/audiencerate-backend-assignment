@@ -1,5 +1,6 @@
 package com.audiencerate.dao;
 
+import com.audiencerate.dao.sql.SegmentSql;
 import com.audiencerate.model.Segment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +46,21 @@ public class SegmentDao {
         SegmentSql.ListQuery query = SegmentSql.buildListQuery(search, status, dataSourceId, tag, sort,
                 normalisedPageSize, offset);
 
-        long total = executeCountQuery(query);
-        List<Segment> segments = executeListDataQuery(query);
-        return new SegmentListResult(segments, total);
+        try (Connection conn = ds.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                final var total = executeCountQuery(conn, query);
+                final var segments = executeListDataQuery(conn, query);
+                conn.commit();
+                return new SegmentListResult(segments, total);
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            LOG.error(ERR_COUNT_SEGMENTS, e);
+            throw new RuntimeException(ERR_COUNT_SEGMENTS, e);
+        }
     }
 
     public Optional<Segment> findById(String id) {
@@ -247,9 +260,8 @@ public class SegmentDao {
 
     // ── Private helpers ──
 
-    private long executeCountQuery(SegmentSql.ListQuery query) {
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query.countSql())) {
+    private long executeCountQuery(Connection conn, SegmentSql.ListQuery query) {
+        try (PreparedStatement ps = conn.prepareStatement(query.countSql())) {
             int filterParamCount = query.params().size() - 2;
             for (int i = 0; i < filterParamCount; i++) {
                 ps.setObject(i + 1, query.params().get(i));
@@ -266,10 +278,9 @@ public class SegmentDao {
         return 0;
     }
 
-    private List<Segment> executeListDataQuery(SegmentSql.ListQuery query) {
+    private List<Segment> executeListDataQuery(Connection conn, SegmentSql.ListQuery query) {
         List<Segment> segments = new ArrayList<>();
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query.dataSql())) {
+        try (PreparedStatement ps = conn.prepareStatement(query.dataSql())) {
             for (int i = 0; i < query.params().size(); i++) {
                 ps.setObject(i + 1, query.params().get(i));
             }
@@ -278,11 +289,11 @@ public class SegmentDao {
                     segments.add(mapRow(rs));
                 }
             }
+            return segments;
         } catch (SQLException e) {
             LOG.error(ERR_QUERY_SEGMENTS, e);
             throw new RuntimeException(ERR_QUERY_SEGMENTS, e);
         }
-        return segments;
     }
 
     private List<String> parseJsonArray(ResultSet rs, String column) throws SQLException {
